@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, useColorScheme } from 'react-native';
 import Header from '../components/Header';
-import type { ProviderProfile } from './ProviderProfileScreen';
+import type { Partner } from '../services/api';
 
 type BookingScreenProps = {
-  provider: ProviderProfile;
+  provider: Partner;
   onBack: () => void;
   onConfirm: (details: {
     service: string;
@@ -14,6 +14,7 @@ type BookingScreenProps = {
     addressLine?: string;
     notes?: string;
     total: number;
+    date: string;
   }) => void;
 };
 
@@ -42,7 +43,7 @@ export default function BookingScreen({ provider, onBack, onConfirm }: BookingSc
   const [addressLine, setAddressLine] = React.useState<string>('');
   const [notes, setNotes] = React.useState<string>('');
 
-  const base = provider.priceFrom;
+  const base = typeof provider.priceMin === 'number' ? provider.priceMin : (typeof provider.priceMax === 'number' ? provider.priceMax! : 0);
   const convenience = 29;
   const total = base + convenience;
 
@@ -59,6 +60,14 @@ export default function BookingScreen({ provider, onBack, onConfirm }: BookingSc
     return d;
   }, []);
 
+  const buildIsoDate = React.useCallback(() => {
+    const when = new Date();
+    when.setDate(when.getDate() + dayOffset);
+    const [h, m] = slot.split(':');
+    when.setHours(Number(h), Number(m), 0, 0);
+    return when.toISOString();
+  }, [dayOffset, slot]);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}> 
       <Header title="Confirm booking" onBack={onBack} />
@@ -66,7 +75,9 @@ export default function BookingScreen({ provider, onBack, onConfirm }: BookingSc
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}> 
           <Text style={[styles.title, { color: colors.textPrimary }]}>{provider.name}</Text>
-          <Text style={[styles.subtle, { color: colors.textMuted }]}>★ {provider.rating.toFixed(1)} • {provider.jobs} jobs • {provider.distanceKm} km</Text>
+          <Text style={[styles.subtle, { color: colors.textMuted }]}>
+            {provider.isAvailable ? 'Available' : 'Busy'} • {provider.serviceRadiusKm} km radius
+          </Text>
         </View>
 
         <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}> 
@@ -158,7 +169,7 @@ export default function BookingScreen({ provider, onBack, onConfirm }: BookingSc
       <View style={[styles.bottomBar, { backgroundColor: colors.background, borderTopColor: colors.border }]}> 
         <Pressable
           style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
-          onPress={() => onConfirm({ service, dayOffset, slot, addressType, addressLine, notes, total })}
+          onPress={() => onConfirm({ service, dayOffset, slot, addressType, addressLine, notes, total, date: buildIsoDate() })}
         >
           <Text style={[styles.primaryText, { color: colors.accentText }]}>Confirm & Pay</Text>
         </Pressable>
