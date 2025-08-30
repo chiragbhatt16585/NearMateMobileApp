@@ -4,9 +4,9 @@ import Header from '../../components/Header';
 import { UserProfile, Address, Booking } from '../../types/user';
 import { getAuthEndpoint, getApiBaseUrl, buildApiUrl } from '../../config/api';
 
-type AccountScreenProps = {
-  user: UserProfile | null;
-  bookings: Booking[];
+interface AccountScreenProps {
+  user: any;
+  bookings: any[];
   onBack: () => void;
   onManageAddresses: () => void;
   showHeader?: boolean;
@@ -16,7 +16,8 @@ type AccountScreenProps = {
   onTermsConditions?: () => void;
   onMobileAuth?: (userData: any) => void;
   onLogout?: () => void;
-};
+  onBookings?: () => void;
+}
 
 type AuthStep = 'phone' | 'otp' | 'register' | 'complete';
 
@@ -31,7 +32,8 @@ export default function AccountScreen({
   onAboutUs, 
   onTermsConditions,
   onMobileAuth,
-  onLogout
+  onLogout,
+  onBookings
 }: AccountScreenProps) {
   const isDarkMode = useColorScheme() === 'dark';
   const [authStep, setAuthStep] = useState<AuthStep>('phone');
@@ -59,6 +61,8 @@ export default function AccountScreen({
       accent: '#000000', // Black color as requested
       error: '#FF3B30',
       success: '#34C759',
+      white: '#ffffff', // Added white color
+      secondary: '#6c757d', // Added secondary color
     }),
     [isDarkMode]
   );
@@ -560,15 +564,31 @@ export default function AccountScreen({
     addresses: user.addresses?.length || 0
   });
   
+  // Debug: Check all user object properties
+  console.log('🔍 AccountScreen - All user properties:', Object.keys(user));
+  console.log('🔍 AccountScreen - User object full:', JSON.stringify(user, null, 2));
+  
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         <Header title="Account" onBack={onBack} />
-        <View style={styles.header}>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Welcome back, {user.name}!
-          </Text>
-        </View>
+        
+        {/* Show different content based on authentication status */}
+        {!user || !user.id ? (
+          // User is not authenticated - show login section
+          <View style={styles.header}>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Welcome to NearMate! Please log in to continue
+            </Text>
+          </View>
+        ) : (
+          // User is authenticated - show welcome message
+          <View style={styles.header}>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Welcome back, {user.name}!
+            </Text>
+          </View>
+        )}
 
         {/* User Profile Card */}
         <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
@@ -599,38 +619,27 @@ export default function AccountScreen({
           </View>
         </View>
 
-        {/* Default Address */}
+        {/* Manage Addresses */}
         <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
-          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Default Address</Text>
-          {user.addresses && user.addresses.length > 0 ? (
-            <View style={styles.addressInfo}>
-              <Text style={[styles.addressLabel, { color: colors.textSecondary }]}>
-                {user.addresses.find(addr => addr.isDefault)?.label || 'Home'}
-              </Text>
-              <Text style={[styles.addressText, { color: colors.textPrimary }]}>
-                {user.addresses.find(addr => addr.isDefault)?.area || 'No address set'}
-              </Text>
-            </View>
-          ) : (
-            <Text style={[styles.noAddress, { color: colors.textMuted }]}>No address set</Text>
-          )}
-          <Pressable style={styles.manageButton} onPress={onManageAddresses}>
-            <Text style={[styles.manageButtonText, { color: colors.primary }]}>Manage Addresses</Text>
+          <Pressable style={styles.aboutUsButton} onPress={onManageAddresses}>
+            <Text style={[styles.aboutUsText, { color: colors.textPrimary }]}>Manage Addresses</Text>
+            <Text style={[styles.aboutUsSubtext, { color: colors.textMuted }]}>Add, edit, and manage your service addresses</Text>
           </Pressable>
         </View>
 
-        {/* Switch to Vendor */}
-        {/* {onSwitchToVendor && (
-          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Vendor Mode</Text>
-            <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
-              Switch to vendor mode to accept bookings and manage services
-            </Text>
-            <Pressable style={styles.vendorButton} onPress={onSwitchToVendor}>
-              <Text style={[styles.vendorButtonText, { color: colors.primary }]}>Switch to Vendor</Text>
-            </Pressable>
+        {/* View Bookings */}
+        {onBookings && (
+          <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
+            <Pressable style={styles.aboutUsButton} onPress={onBookings}>
+              <Text style={[styles.aboutUsText, { color: colors.textPrimary }]}>View Bookings</Text>
+              <Text style={[styles.aboutUsSubtext, { color: colors.textMuted }]}>Check your service bookings and history</Text>
+          </Pressable>
           </View>
-        )} */}
+        )}
+
+        
+
+
 
         {/* About Us and Terms buttons */}
         <View style={styles.infoButtons}>
@@ -652,6 +661,8 @@ export default function AccountScreen({
             </View>
             )}
         </View>
+
+
 
         {/* Logout Button */}
         {onLogout && (
@@ -855,20 +866,6 @@ const styles = StyleSheet.create({
   profileEmail: {
     fontSize: 14,
   },
-  addressInfo: {
-    gap: 4,
-  },
-  addressLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  addressText: {
-    fontSize: 14,
-  },
-  noAddress: {
-    fontSize: 14,
-    fontStyle: 'italic',
-  },
   mobileInfo: {
     gap: 4,
   },
@@ -880,20 +877,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  manageButton: {
-    alignSelf: 'flex-start',
-  },
-  manageButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  vendorButton: {
-    alignSelf: 'flex-start',
-  },
-  vendorButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
+
   aboutUsButton: { 
     paddingVertical: 8 
   },

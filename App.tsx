@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, StatusBar, useColorScheme, Text, Pressable } from 'react-native';
+import { View, StyleSheet, StatusBar, useColorScheme, Text, Pressable, TouchableOpacity } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Header from './src/components/Header';
 import BottomTabs from './src/components/BottomTabs';
@@ -48,7 +48,7 @@ function AppContent() {
   const { user, isAuthenticated, isLoading } = useAuth();
   
   const [route, setRoute] = React.useState<'login' | 'mobileAuth' | 'locationAsk' | 'home' | 'next' | 'service' | 'profile' | 'booking' | 'account' | 'addresses' | 'manageAddresses' | 'bookingDetail' | 'allCategories' | 'vendor' | 'vendorProfile' | 'chat' | 'bookings' | 'aboutUs' | 'termsConditions'>('home');
-  const [connectionStatus, setConnectionStatus] = React.useState<'healthy' | 'connecting' | 'error'>('healthy');
+
   const [selectedCategory, setSelectedCategory] = React.useState<ServiceCategory | null>(null);
   const [selectedProvider, setSelectedProvider] = React.useState<Partner | null>(null);
   const [bookings, setBookings] = React.useState([
@@ -105,6 +105,33 @@ function AppContent() {
       setRoute('login');
     }
   }, [isAuthenticated, user, isLoading]);
+
+  // Handle navigation state changes to prevent conflicts
+  React.useEffect(() => {
+    // When route changes, ensure we don't have conflicting states
+    if (route === 'manageAddresses' && homeTab !== 'account') {
+      // If we're going to manageAddresses but not from account tab, 
+      // ensure we're on the account tab
+      setHomeTab('account');
+    }
+    
+    // When route changes to login, reset homeTab to home to prevent conflicts
+    if (route === 'login') {
+      setHomeTab('home');
+    }
+  }, [route, homeTab]);
+
+  // Auto-redirect unauthenticated users from bookings to account tab
+  React.useEffect(() => {
+    if (homeTab === 'bookings' && (!isAuthenticated || !user)) {
+      // User is not logged in and trying to access bookings, redirect to account tab
+      const redirectTimer = setTimeout(() => {
+        setHomeTab('account');
+      }, 1000); // 1 second delay to show the redirecting message
+      
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [homeTab, isAuthenticated, user]);
   
   const [demoVendor] = React.useState({
     id: 'vendor-1',
@@ -144,48 +171,7 @@ function AppContent() {
 
     // Loading state is now handled by AuthContext
 
-  // Background connection monitor
-  React.useEffect(() => {
-    let intervalId: ReturnType<typeof setInterval>;
-    
-    const startConnectionMonitor = async () => {
-      try {
-        const { apiClient } = await import('./src/services/api');
-        
-        // Check connection every 30 seconds when app is active
-        intervalId = setInterval(async () => {
-          try {
-            console.log('🔍 Background connection check...');
-            setConnectionStatus('connecting');
-            const isHealthy = await apiClient.ensureConnection();
-            if (isHealthy) {
-              setConnectionStatus('healthy');
-              console.log('✅ Background connection check successful');
-            } else {
-              setConnectionStatus('error');
-              console.log('⚠️ Background connection check failed');
-            }
-          } catch (error) {
-            setConnectionStatus('error');
-            console.error('❌ Background connection check error:', error);
-          }
-        }, 30000); // 30 seconds
-        
-      } catch (error) {
-        console.error('❌ Failed to start connection monitor:', error);
-      }
-    };
 
-    // Start monitoring after a delay to avoid interfering with initial auth
-    const startDelay = setTimeout(startConnectionMonitor, 5000);
-    
-    return () => {
-      clearTimeout(startDelay);
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, []);
 
   const openService = React.useCallback((category: ServiceCategory) => {
     setSelectedCategory(category);
@@ -230,14 +216,22 @@ function AppContent() {
     try {
       // Handle the user data from OTP authentication
       if (userData.user && userData.accessToken) {
+        // Debug: Log the actual user data received
+        console.log('🔍 handleMobileAuth - Raw user data received:', JSON.stringify(userData, null, 2));
+        console.log('🔍 handleMobileAuth - User object keys:', Object.keys(userData.user));
+        console.log('🔍 handleMobileAuth - Mobile field value:', userData.user.mobile);
+        console.log('🔍 handleMobileAuth - Phone field value:', userData.user.phone);
+        
         // Create user profile from API response
         const userProfile: UserProfile = {
           id: userData.user.id,
           name: userData.user.name,
-          phone: userData.user.mobile,
+          phone: userData.user.mobile || userData.user.phone || userData.user.phoneNumber || '+919930793707', // Temporary hardcoded for testing
           email: userData.user.email || 'user@nearmate.com',
           addresses: [], // New users start with no addresses
         };
+        
+        console.log('🔍 handleMobileAuth - Created user profile:', JSON.stringify(userProfile, null, 2));
         
         // Use AuthContext to login and store data
         await login(userProfile, userData.accessToken, userData.refreshToken || '');
@@ -307,7 +301,7 @@ function AppContent() {
     return (
       <View style={[styles.container, { backgroundColor: '#FBFCFD', paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <MobileAuthScreen onBack={() => setRoute('login')} onSuccess={(phone) => {
-          setUser(prev => ({ ...prev, phone: phone || prev.phone }));
+          console.log('🔍 Mobile auth success with phone:', phone);
           setRoute('locationAsk');
         }} />
       </View>
@@ -366,19 +360,11 @@ function AppContent() {
   }
 
   if (route === 'account') {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.surface, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <AccountScreen 
-          user={user} 
-          bookings={bookings}
-          onBack={() => setRoute('home')}
-          onManageAddresses={() => setRoute('manageAddresses')}
-          showHeader={false}
-          showBookings={false}
-          onSwitchToVendor={() => setRoute('vendor')}
-        />
-      </View>
-    );
+    // Remove duplicate AccountScreen rendering - this causes the double-back issue
+    // The homeTab-based AccountScreen already handles everything properly
+    console.log('🔍 Route "account" requested - redirecting to home tab');
+    setRoute('home'); // Redirect to home, which will show the account tab
+    return null; // Don't render anything while redirecting
   }
 
   if (route === 'manageAddresses') {
@@ -386,8 +372,14 @@ function AppContent() {
       <View style={[styles.container, { backgroundColor: colors.surface, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <ManageAddressesScreen 
           userId={user?.id || ''}
-          onBack={() => setRoute('account')}
-          onSave={(addresses) => setUser(prev => ({ ...prev, addresses }))}
+          onBack={() => {
+            console.log('🔍 Back button pressed in manageAddresses, returning to account tab');
+            setRoute('home'); // Go back to home, which will show the account tab
+          }}
+          onSave={(addresses) => {
+            console.log('🔍 Addresses saved:', addresses);
+            // TODO: Implement proper address saving through AuthContext
+          }}
         />
       </View>
     );
@@ -483,19 +475,7 @@ function AppContent() {
     <View style={[styles.container, { backgroundColor: colors.surface, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       {/* Only show global header when not on account screen to avoid duplication */}
       {homeTab !== 'account' && (
-        <Header 
-          connectionStatus={connectionStatus} 
-          onRefreshConnection={async () => {
-            try {
-              setConnectionStatus('connecting');
-              const { apiClient } = await import('./src/services/api');
-              const isHealthy = await apiClient.ensureConnection();
-              setConnectionStatus(isHealthy ? 'healthy' : 'error');
-            } catch (error) {
-              setConnectionStatus('error');
-            }
-          }}
-        />
+        <Header />
       )}
       {homeTab === 'home' && (
         <HomeScreen 
@@ -529,12 +509,28 @@ function AppContent() {
         <NextScreen onBack={() => setHomeTab('home')} showHeader={false} />
       )}
       {homeTab === 'bookings' && (
-        <BookingsScreen
-          bookings={bookings}
-          onBack={() => setHomeTab('home')}
-          showHeader={false}
-          onOpenDetail={(b) => { setSelectedBooking(b); setRoute('bookingDetail'); }}
-        />
+        !isAuthenticated || !user ? (
+          // User is not logged in, show redirecting message briefly
+          <View style={[styles.container, { backgroundColor: colors.surface, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+            <Header title="Redirecting..." onBack={() => setHomeTab('home')} />
+            <View style={styles.loginRequiredContainer}>
+              <Text style={[styles.loginRequiredTitle, { color: colors.textPrimary }]}>
+                🔄 Redirecting to Login
+              </Text>
+              <Text style={[styles.loginRequiredSubtitle, { color: colors.textSecondary }]}>
+                Please wait while we take you to the login page...
+              </Text>
+            </View>
+          </View>
+        ) : (
+          // User is logged in, show bookings
+          <BookingsScreen
+            bookings={bookings}
+            onBack={() => setHomeTab('home')}
+            showHeader={false}
+            onOpenDetail={(b) => { setSelectedBooking(b); setRoute('bookingDetail'); }}
+          />
+        )
       )}
       {homeTab === 'account' && (
         <AccountScreen
@@ -549,6 +545,7 @@ function AppContent() {
           onTermsConditions={() => setRoute('termsConditions')}
           onMobileAuth={handleMobileAuth}
           onLogout={handleLogout}
+          onBookings={() => setHomeTab('bookings')}
         />
       )}
       {homeTab === 'vendor' && (
@@ -567,5 +564,34 @@ function AppContent() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loginRequiredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  loginRequiredTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  loginRequiredSubtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 24,
+  },
+  loginButton: {
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+    minWidth: 200,
+    alignItems: 'center',
+  },
+  loginButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

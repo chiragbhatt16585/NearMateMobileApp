@@ -222,7 +222,7 @@ export default function HomeScreen({ onNext, onServicePress, onViewAllServices, 
           <Text style={[styles.viewAllText, { color: colors.textPrimary }]}>View all services</Text>
         </Pressable>
 
-        {onAboutUs && (
+        {/* {onAboutUs && (
           <Pressable 
             style={[styles.aboutUsButton, { borderColor: colors.border }]} 
             onPress={onAboutUs}
@@ -247,7 +247,7 @@ export default function HomeScreen({ onNext, onServicePress, onViewAllServices, 
           >
             <Text style={[styles.demoLoginText, { color: colors.primary }]}>🔑 Demo Login</Text>
           </Pressable>
-        )}
+        )} */}
 
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>🛡️ Why NearMate</Text>

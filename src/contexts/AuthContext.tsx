@@ -78,6 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const parsedUser = JSON.parse(userData);
           console.log('👤 Parsed user data:', parsedUser.name, parsedUser.email);
+          console.log('📱 Parsed phone number:', parsedUser.phone);
+          console.log('🔍 Full parsed user data:', JSON.stringify(parsedUser, null, 2));
           
           // Validate token by making a simple API call
           console.log('🔐 Validating stored token...');
@@ -88,26 +90,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setIsAuthenticated(true);
             console.log('✅ User authenticated from storage successfully');
           } else {
-            // Token validation failed - this could be due to network issues
-            // For now, let's be more lenient and keep the user logged in
-            // but mark that we need to revalidate when network is available
-            console.log('⚠️ Token validation failed, but keeping user logged in temporarily');
-            setUser(parsedUser);
-            setIsAuthenticated(true);
-            
-            // TODO: Implement a background token refresh mechanism
-            // For now, we'll keep the user logged in and let them continue using the app
+            // Token validation failed - clear stored data and require re-authentication
+            console.log('❌ Token validation failed, clearing stored data');
+            await clearStorage();
+            setUser(null);
+            setIsAuthenticated(false);
+            console.log('🧹 Stored authentication data cleared');
           }
         } catch (error) {
           console.error('❌ Error parsing stored user data:', error);
           await clearStorage();
+          setUser(null);
+          setIsAuthenticated(false);
         }
       } else {
         console.log('🔑 No stored authentication data found');
+        setUser(null);
+        setIsAuthenticated(false);
       }
     } catch (error) {
       console.error('❌ Error checking auth status:', error);
       await clearStorage();
+      setUser(null);
+      setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
       console.log('🏁 Authentication check completed');
@@ -157,7 +162,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('🔐 Starting login process...');
       console.log('👤 User data to store:', userData.name, userData.email);
+      console.log('📱 Phone number to store:', userData.phone);
       console.log('🔑 Token length:', accessToken.length);
+      console.log('🔍 Full user data being stored:', JSON.stringify(userData, null, 2));
       
       // Store user data and tokens
       await Promise.all([
@@ -180,6 +187,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('🔍 Storage verification:');
       console.log('  - User data stored:', storedUser ? 'Yes' : 'No');
       console.log('  - Token stored:', storedToken ? 'Yes' : 'No');
+      if (storedUser) {
+        const parsedStoredUser = JSON.parse(storedUser);
+        console.log('  - Stored phone number:', parsedStoredUser.phone);
+        console.log('  - Stored user data:', JSON.stringify(parsedStoredUser, null, 2));
+      }
     } catch (error) {
       console.error('❌ Error storing authentication data:', error);
       throw error;
@@ -234,12 +246,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsAuthenticated(true);
           console.log('✅ Authentication refreshed successfully');
         } else {
-          console.log('❌ Token still invalid after refresh');
-          // Don't clear storage immediately, let the user continue
+          console.log('❌ Token still invalid after refresh, clearing stored data');
+          await clearStorage();
+          setUser(null);
+          setIsAuthenticated(false);
+          console.log('🧹 Stored authentication data cleared after refresh');
         }
       }
     } catch (error) {
       console.error('❌ Error refreshing auth status:', error);
+      // Clear stored data on error
+      await clearStorage();
+      setUser(null);
+      setIsAuthenticated(false);
     }
   };
 
