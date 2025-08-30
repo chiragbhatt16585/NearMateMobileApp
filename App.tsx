@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, StatusBar, useColorScheme } from 'react-native';
+import { View, StyleSheet, StatusBar, useColorScheme, Text, Pressable } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Header from './src/components/Header';
 import BottomTabs from './src/components/BottomTabs';
@@ -19,18 +19,25 @@ import ProviderProfileScreen from './src/screens/ProviderProfileScreen';
 import BookingScreen from './src/screens/BookingScreen';
 import AccountScreen from './src/screens/Account/AccountScreen';
 import ManageAddressesScreen from './src/screens/Account/ManageAddressesScreen';
+import AddressesScreen from './src/screens/AddressesScreen';
 import BookingsScreen from './src/screens/BookingsScreen';
 import BookingDetailScreen from './src/screens/BookingDetailScreen';
 import AllCategoriesScreen from './src/screens/AllCategoriesScreen';
 import VendorDashboardScreen from './src/screens/Vendor/VendorDashboardScreen';
 import VendorProfileScreen from './src/screens/Vendor/VendorProfileScreen';
 import ChatScreen from './src/screens/ChatScreen';
+import AboutUsScreen from './src/screens/AboutUsScreen';
+import TermsConditionsScreen from './src/screens/TermsConditionsScreen';
 import { ServiceCategory, Partner } from './src/services/api';
+import { UserProfile } from './src/types/user';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }
@@ -38,20 +45,12 @@ export default function App() {
 function AppContent() {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
+  const { user, isAuthenticated, isLoading } = useAuth();
   
-  const [route, setRoute] = React.useState<'login' | 'mobileAuth' | 'locationAsk' | 'home' | 'next' | 'service' | 'profile' | 'booking' | 'account' | 'addresses' | 'bookingDetail' | 'allCategories' | 'vendor' | 'vendorProfile' | 'chat' | 'bookings'>('login');
+  const [route, setRoute] = React.useState<'login' | 'mobileAuth' | 'locationAsk' | 'home' | 'next' | 'service' | 'profile' | 'booking' | 'account' | 'addresses' | 'manageAddresses' | 'bookingDetail' | 'allCategories' | 'vendor' | 'vendorProfile' | 'chat' | 'bookings' | 'aboutUs' | 'termsConditions'>('home');
+  const [connectionStatus, setConnectionStatus] = React.useState<'healthy' | 'connecting' | 'error'>('healthy');
   const [selectedCategory, setSelectedCategory] = React.useState<ServiceCategory | null>(null);
   const [selectedProvider, setSelectedProvider] = React.useState<Partner | null>(null);
-  const [user, setUser] = React.useState({
-    id: 'user-1',
-    name: 'Chirag Bhatt',
-    phone: '+919930793707',
-    email: 'chiragbhatt16585@gmail.com',
-    addresses: [
-      { id: '1', label: 'Home', line1: '123 Main Street, Mumbai, Maharashtra', isDefault: true },
-      { id: '2', label: 'Work', line1: '456 Park Avenue, Delhi, Delhi', isDefault: false },
-    ],
-  });
   const [bookings, setBookings] = React.useState([
     { 
       id: '1', 
@@ -90,6 +89,23 @@ function AppContent() {
   const [homeTab, setHomeTab] = React.useState<'home' | 'explore' | 'bookings' | 'account' | 'vendor'>('home');
   const [selectedBooking, setSelectedBooking] = React.useState<any>(null);
   const [searchQuery, setSearchQuery] = React.useState('');
+  
+  // Handle authentication state changes
+  React.useEffect(() => {
+    if (isLoading) {
+      // Still checking auth status, show loading
+      return;
+    }
+    
+    if (isAuthenticated && user) {
+      // User is authenticated, go to home
+      setRoute('home');
+    } else {
+      // User is not authenticated, go to login
+      setRoute('login');
+    }
+  }, [isAuthenticated, user, isLoading]);
+  
   const [demoVendor] = React.useState({
     id: 'vendor-1',
     name: 'Riya Sharma',
@@ -125,6 +141,51 @@ function AppContent() {
     textSecondary: colorScheme === 'dark' ? '#cccccc' : '#666666',
     border: colorScheme === 'dark' ? '#404040' : '#e0e0e0',
   }), [colorScheme]);
+
+    // Loading state is now handled by AuthContext
+
+  // Background connection monitor
+  React.useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval>;
+    
+    const startConnectionMonitor = async () => {
+      try {
+        const { apiClient } = await import('./src/services/api');
+        
+        // Check connection every 30 seconds when app is active
+        intervalId = setInterval(async () => {
+          try {
+            console.log('🔍 Background connection check...');
+            setConnectionStatus('connecting');
+            const isHealthy = await apiClient.ensureConnection();
+            if (isHealthy) {
+              setConnectionStatus('healthy');
+              console.log('✅ Background connection check successful');
+            } else {
+              setConnectionStatus('error');
+              console.log('⚠️ Background connection check failed');
+            }
+          } catch (error) {
+            setConnectionStatus('error');
+            console.error('❌ Background connection check error:', error);
+          }
+        }, 30000); // 30 seconds
+        
+      } catch (error) {
+        console.error('❌ Failed to start connection monitor:', error);
+      }
+    };
+
+    // Start monitoring after a delay to avoid interfering with initial auth
+    const startDelay = setTimeout(startConnectionMonitor, 5000);
+    
+    return () => {
+      clearTimeout(startDelay);
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, []);
 
   const openService = React.useCallback((category: ServiceCategory) => {
     setSelectedCategory(category);
@@ -163,6 +224,41 @@ function AppContent() {
     }
   }, []);
 
+  const { login } = useAuth();
+  
+  const handleMobileAuth = async (userData: any) => {
+    try {
+      // Handle the user data from OTP authentication
+      if (userData.user && userData.accessToken) {
+        // Create user profile from API response
+        const userProfile: UserProfile = {
+          id: userData.user.id,
+          name: userData.user.name,
+          phone: userData.user.mobile,
+          email: userData.user.email || 'user@nearmate.com',
+          addresses: [], // New users start with no addresses
+        };
+        
+        // Use AuthContext to login and store data
+        await login(userProfile, userData.accessToken, userData.refreshToken || '');
+        
+        console.log('✅ User authenticated successfully:', userProfile.name);
+        console.log('🔑 Access token stored');
+      } else {
+        console.error('❌ Invalid user data received:', userData);
+      }
+    } catch (error) {
+      console.error('❌ Mobile authentication failed:', error);
+    }
+  };
+
+  const { logout } = useAuth();
+  
+  const handleLogout = async () => {
+    await logout();
+    console.log('✅ User logged out');
+  };
+
   const saveBooking = React.useCallback((bookingData: any) => {
     const newBooking = {
       id: Date.now().toString(),
@@ -189,6 +285,15 @@ function AppContent() {
     }
     setRoute('bookings');
   }, [selectedBooking]);
+
+  // Show loading while checking authentication
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: '#FBFCFD', paddingTop: insets.top, paddingBottom: insets.bottom, justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ fontSize: 16, color: '#666' }}>Checking authentication...</Text>
+      </View>
+    );
+  }
 
   if (route === 'login') {
     return (
@@ -267,7 +372,7 @@ function AppContent() {
           user={user} 
           bookings={bookings}
           onBack={() => setRoute('home')}
-          onManageAddresses={() => setRoute('addresses')}
+          onManageAddresses={() => setRoute('manageAddresses')}
           showHeader={false}
           showBookings={false}
           onSwitchToVendor={() => setRoute('vendor')}
@@ -276,11 +381,11 @@ function AppContent() {
     );
   }
 
-  if (route === 'addresses') {
+  if (route === 'manageAddresses') {
     return (
       <View style={[styles.container, { backgroundColor: colors.surface, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <ManageAddressesScreen 
-          addresses={user.addresses}
+          userId={user?.id || ''}
           onBack={() => setRoute('account')}
           onSave={(addresses) => setUser(prev => ({ ...prev, addresses }))}
         />
@@ -347,15 +452,77 @@ function AppContent() {
     );
   }
 
+  if (route === 'aboutUs') {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.surface, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <AboutUsScreen onBack={() => setRoute('home')} />
+      </View>
+    );
+  }
+
+  if (route === 'termsConditions') {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.surface, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <TermsConditionsScreen onBack={() => setRoute('home')} />
+      </View>
+    );
+  }
+
+  if (route === 'addresses') {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.surface, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <AddressesScreen 
+          endUserId={user?.id || ''} 
+          onBack={() => setRoute('account')} 
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.surface, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      <Header />
+      {/* Only show global header when not on account screen to avoid duplication */}
+      {homeTab !== 'account' && (
+        <Header 
+          connectionStatus={connectionStatus} 
+          onRefreshConnection={async () => {
+            try {
+              setConnectionStatus('connecting');
+              const { apiClient } = await import('./src/services/api');
+              const isHealthy = await apiClient.ensureConnection();
+              setConnectionStatus(isHealthy ? 'healthy' : 'error');
+            } catch (error) {
+              setConnectionStatus('error');
+            }
+          }}
+        />
+      )}
       {homeTab === 'home' && (
         <HomeScreen 
           onNext={() => setHomeTab('explore')}
           onServicePress={openService}
           onViewAllServices={() => setRoute('allCategories')}
           onSearch={handleSearch}
+          onAboutUs={() => setRoute('aboutUs')}
+          onTermsConditions={() => setRoute('termsConditions')}
+          onDemoLogin={() => {
+            // Simulate successful OTP authentication for demo
+            const mockUserData = {
+              user: {
+                id: '87c793d2-336f-4299-aed2-cd4717e322d5',
+                name: 'Chirag Bhatt',
+                mobile: '+919930793707',
+                email: 'chiragbhatt16585@gmail.com',
+                status: 'active',
+                createdAt: new Date().toISOString()
+              },
+              accessToken: 'demo-access-token-12345',
+              message: 'Demo login successful'
+            };
+            
+            handleMobileAuth(mockUserData);
+            console.log('✅ Demo user logged in via OTP flow');
+          }}
         />
       )}
       {homeTab === 'explore' && (
@@ -374,10 +541,14 @@ function AppContent() {
           user={user}
           bookings={bookings}
           onBack={() => setHomeTab('home')}
-          onManageAddresses={() => setRoute('addresses')}
+          onManageAddresses={() => setRoute('manageAddresses')}
           showHeader={false}
           showBookings={false}
           onSwitchToVendor={() => setRoute('vendor')}
+          onAboutUs={() => setRoute('aboutUs')}
+          onTermsConditions={() => setRoute('termsConditions')}
+          onMobileAuth={handleMobileAuth}
+          onLogout={handleLogout}
         />
       )}
       {homeTab === 'vendor' && (

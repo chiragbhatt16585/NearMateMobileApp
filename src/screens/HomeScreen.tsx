@@ -8,9 +8,12 @@ interface HomeScreenProps {
   onServicePress: (category: ServiceCategory) => void;
   onViewAllServices: () => void;
   onSearch: (query: string) => void;
+  onAboutUs?: () => void;
+  onTermsConditions?: () => void;
+  onDemoLogin?: () => void;
 }
 
-export default function HomeScreen({ onNext, onServicePress, onViewAllServices, onSearch }: HomeScreenProps) {
+export default function HomeScreen({ onNext, onServicePress, onViewAllServices, onSearch, onAboutUs, onTermsConditions, onDemoLogin }: HomeScreenProps) {
   const colorScheme = useColorScheme();
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,22 +43,9 @@ export default function HomeScreen({ onNext, onServicePress, onViewAllServices, 
       // Import the API client dynamically to avoid circular dependencies
       const { apiClient } = await import('../services/api');
       
-      // If no token set, try dev auto-login
-      if (!apiClient.hasToken()) {
-        try {
-          const { DEV_AUTH } = await import('../config/apiAuth');
-          if (DEV_AUTH.enabled) {
-            console.log('🔐 Dev auto-login...');
-            await apiClient.login(DEV_AUTH.email, DEV_AUTH.password);
-            console.log('🔐 Dev login success');
-          }
-        } catch (e) {
-          console.log('ℹ️ Dev auth config missing or disabled');
-        }
-      }
-      
-      // Test connection first
-      const isConnected = await apiClient.testConnection();
+      // Ensure we have a healthy connection
+      console.log('🔍 Ensuring API connection...');
+      const isConnected = await apiClient.ensureConnection();
       if (!isConnected) {
         throw new Error('Cannot connect to the API server. Please check if the backend is running.');
       }
@@ -231,6 +221,33 @@ export default function HomeScreen({ onNext, onServicePress, onViewAllServices, 
         >
           <Text style={[styles.viewAllText, { color: colors.textPrimary }]}>View all services</Text>
         </Pressable>
+
+        {onAboutUs && (
+          <Pressable 
+            style={[styles.aboutUsButton, { borderColor: colors.border }]} 
+            onPress={onAboutUs}
+          >
+            <Text style={[styles.aboutUsText, { color: colors.textPrimary }]}>About NearMate</Text>
+          </Pressable>
+        )}
+
+        {onTermsConditions && (
+          <Pressable 
+            style={[styles.termsButton, { borderColor: colors.border }]} 
+            onPress={onTermsConditions}
+          >
+            <Text style={[styles.termsText, { color: colors.textPrimary }]}>Terms & Conditions</Text>
+          </Pressable>
+        )}
+
+        {onDemoLogin && (
+          <Pressable 
+            style={[styles.demoLoginButton, { borderColor: colors.primary }]} 
+            onPress={onDemoLogin}
+          >
+            <Text style={[styles.demoLoginText, { color: colors.primary }]}>🔑 Demo Login</Text>
+          </Pressable>
+        )}
 
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>🛡️ Why NearMate</Text>
@@ -493,5 +510,41 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     textAlign: 'center',
+  },
+  aboutUsButton: {
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  aboutUsText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  termsButton: {
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  termsText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  demoLoginButton: {
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  demoLoginText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

@@ -6,9 +6,11 @@ type HeaderProps = {
   onBack?: () => void; // show back if provided
   rightLabel?: string;
   onRightPress?: () => void;
+  connectionStatus?: 'healthy' | 'connecting' | 'error';
+  onRefreshConnection?: () => void;
 };
 
-export default function Header({ title, onBack, rightLabel, onRightPress }: HeaderProps) {
+export default function Header({ title, onBack, rightLabel, onRightPress, connectionStatus, onRefreshConnection }: HeaderProps) {
   const isDarkMode = useColorScheme() === 'dark';
 
   const colors = React.useMemo(
@@ -17,11 +19,33 @@ export default function Header({ title, onBack, rightLabel, onRightPress }: Head
       textPrimary: isDarkMode ? '#E7E9EA' : '#0F1419',
       textMuted: isDarkMode ? '#8A9199' : '#687076',
       border: isDarkMode ? '#1C2228' : '#ECEEF0',
+      accent: '#007AFF',
+      success: '#34C759',
+      warning: '#FF9500',
+      error: '#FF3B30',
     }),
     [isDarkMode]
   );
 
   const label = title ?? 'NearMate';
+
+  const getConnectionColor = () => {
+    switch (connectionStatus) {
+      case 'healthy': return colors.success;
+      case 'connecting': return colors.warning;
+      case 'error': return colors.error;
+      default: return colors.success;
+    }
+  };
+
+  const getConnectionText = () => {
+    switch (connectionStatus) {
+      case 'healthy': return '●';
+      case 'connecting': return '⟳';
+      case 'error': return '⚠';
+      default: return '●';
+    }
+  };
 
   return (
     <View style={[styles.container, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}> 
@@ -44,13 +68,27 @@ export default function Header({ title, onBack, rightLabel, onRightPress }: Head
         <Text style={[styles.brandName, { color: colors.textPrimary }]} numberOfLines={1}>{label}</Text>
       </View>
 
-      {rightLabel ? (
-        <Pressable style={[styles.helpBtn, { borderColor: colors.border }]} onPress={onRightPress}> 
-          <Text style={[styles.helpText, { color: colors.textMuted }]}>{rightLabel}</Text>
-        </Pressable>
-      ) : (
-        <View style={{ width: 36 }} />
-      )}
+      <View style={styles.right}>
+        {connectionStatus && (
+          <View style={styles.connectionSection}>
+            <View style={[styles.connectionIndicator, { backgroundColor: getConnectionColor() }]}>
+              <Text style={styles.connectionText}>{getConnectionText()}</Text>
+            </View>
+            {connectionStatus === 'error' && onRefreshConnection && (
+              <Pressable onPress={onRefreshConnection} style={styles.refreshButton}>
+                <Text style={[styles.refreshText, { color: colors.accent }]}>⟳</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
+        {rightLabel ? (
+          <Pressable style={[styles.helpBtn, { borderColor: colors.border }]} onPress={onRightPress}> 
+            <Text style={[styles.helpText, { color: colors.textMuted }]}>{rightLabel}</Text>
+          </Pressable>
+        ) : (
+          <View style={{ width: 36 }} />
+        )}
+      </View>
     </View>
   );
 }
@@ -100,7 +138,35 @@ const styles = StyleSheet.create({
   backIcon: {
     fontSize: 18,
   },
-  title: {},
+  right: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  connectionSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  connectionIndicator: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  connectionText: {
+    fontSize: 12,
+    color: 'white',
+    fontWeight: '600',
+  },
+  refreshButton: {
+    padding: 4,
+  },
+  refreshText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
 
 

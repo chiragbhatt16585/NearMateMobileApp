@@ -1,8 +1,19 @@
 export type Address = {
   id: string;
-  label: string; // e.g., Home, Work
-  line1: string;
-  isDefault?: boolean;
+  endUserId: string;
+  type: 'home' | 'work' | 'other';
+  label: string;
+  area: string;
+  pincode: string;
+  city: string;
+  state: string;
+  country: string;
+  lat?: number;
+  lng?: number;
+  isDefault: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type Booking = {
