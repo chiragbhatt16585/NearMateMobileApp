@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Image, useColorScheme } from 'react-native';
+import { useLocation } from '../contexts/LocationContext';
 
 type HeaderProps = {
   title?: string; // if not provided, shows NearMate
@@ -12,6 +13,7 @@ type HeaderProps = {
 
 export default function Header({ title, onBack, rightLabel, onRightPress, connectionStatus, onRefreshConnection }: HeaderProps) {
   const isDarkMode = useColorScheme() === 'dark';
+  const { locationInfo, isLoading, error } = useLocation();
 
   const colors = React.useMemo(
     () => ({
@@ -68,6 +70,26 @@ export default function Header({ title, onBack, rightLabel, onRightPress, connec
         <Text style={[styles.brandName, { color: colors.textPrimary }]} numberOfLines={1}>{label}</Text>
       </View>
 
+      <Pressable style={styles.locationSection} onPress={() => {
+        // TODO: Open location picker or refresh location
+        console.log('Location section tapped');
+      }}>
+        <View style={styles.locationContainer}>
+          <Text style={styles.locationIcon}>📍</Text>
+          <View style={styles.locationTextContainer}>
+            <Text style={[styles.locationLabel, { color: colors.textPrimary }]} numberOfLines={1}>
+              Current Location
+            </Text>
+            <Text style={[styles.locationAddress, { color: colors.textMuted }]} numberOfLines={1}>
+              {isLoading ? 'Fetching location...' : 
+               error ? 'Location unavailable' :
+               locationInfo?.formattedAddress || locationInfo?.city || 'Location not set'}
+            </Text>
+          </View>
+          <Text style={[styles.locationArrow, { color: colors.textMuted }]}>⌄</Text>
+        </View>
+      </Pressable>
+
       <View style={styles.right}>
         {connectionStatus && (
           <View style={styles.connectionSection}>
@@ -106,7 +128,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    maxWidth: '65%',
+    maxWidth: '50%',
+  },
+  locationSection: {
+    flex: 1,
+    marginHorizontal: 12,
+    justifyContent: 'center',
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  locationIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  locationTextContainer: {
+    flex: 1,
+    marginRight: 8,
+  },
+  locationLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  locationAddress: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  locationArrow: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   brandLogo: {
     width: 40,

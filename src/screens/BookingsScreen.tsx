@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, useColorScheme, Pressable, Touchabl
 import Header from '../components/Header';
 import type { Booking } from '../types/user';
 
+
 type BookingsScreenProps = {
   bookings: Booking[];
   onBack: () => void;
@@ -93,6 +94,8 @@ export default function BookingsScreen({ bookings, onBack, showHeader = true, on
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+
+
         {/* Summary Cards */}
         <View style={styles.summaryRow}>
           <View style={[styles.summaryCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
@@ -219,6 +222,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingVertical: 16, gap: 12 },
+
   summaryRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 16 },
   summaryCard: {
     alignItems: 'center',

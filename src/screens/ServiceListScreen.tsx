@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from
 import { useColorScheme } from 'react-native';
 import { Partner, ServiceCategory } from '../services/api';
 
+
 interface ServiceListScreenProps {
   category: ServiceCategory;
   onBack: () => void;
@@ -81,6 +82,8 @@ export default function ServiceListScreen({ category, onBack, onViewProfile, onB
           </View>
         ) : null}
 
+
+
         <View style={styles.metaRow}> 
           <Text style={[styles.metaText, { color: colors.textMuted }]}>Showing {providers.length} {category.label} near you</Text>
         </View>
@@ -128,6 +131,7 @@ export default function ServiceListScreen({ category, onBack, onViewProfile, onB
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { paddingHorizontal: 20, paddingVertical: 16, gap: 12 },
+
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   loadingText: { marginTop: 12, fontSize: 14 },
   errorContainer: { alignItems: 'center', paddingVertical: 12 },

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndic
 import { useColorScheme } from 'react-native';
 import { ServiceCategory } from '../services/api';
 
+
 interface HomeScreenProps {
   onNext: () => void;
   onServicePress: (category: ServiceCategory) => void;
@@ -131,12 +132,16 @@ export default function HomeScreen({ onNext, onServicePress, onViewAllServices, 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
       <View style={styles.content}>
+
+
         <View style={[styles.heroCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.heroKicker, { color: colors.textSecondary }]}>Trusted home & daily services</Text>
           <Text style={[styles.heroHeading, { color: colors.textPrimary }]}>Book verified professionals near you</Text>
           <Text style={[styles.heroBody, { color: colors.textSecondary }]}>
             Fast matching by proximity, trust score, and price. Pay securely via UPI or card.
           </Text>
+
+
 
           <View style={styles.searchContainer}>
             <View style={[styles.searchRow, { borderColor: colors.border }]}>
@@ -297,6 +302,7 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
   },
+
   loadingContainer: {
     flex: 1,
     alignItems: 'center',

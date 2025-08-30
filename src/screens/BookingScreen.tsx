@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, useColorSchem
 import Header from '../components/Header';
 import type { Partner } from '../services/api';
 
+
 type BookingScreenProps = {
   provider: Partner;
   onBack: () => void;
@@ -73,6 +74,8 @@ export default function BookingScreen({ provider, onBack, onConfirm }: BookingSc
       <Header title="Confirm booking" onBack={onBack} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+
+
         <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}> 
           <Text style={[styles.title, { color: colors.textPrimary }]}>{provider.name}</Text>
           <Text style={[styles.subtle, { color: colors.textMuted }]}>
@@ -181,6 +184,7 @@ export default function BookingScreen({ provider, onBack, onConfirm }: BookingSc
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { paddingHorizontal: 20, paddingVertical: 16, gap: 12 },
+
   card: { borderWidth: 1, borderRadius: 16, padding: 16, gap: 10 },
   title: { fontSize: 16, fontWeight: '800', letterSpacing: -0.2 },
   label: { fontSize: 14, fontWeight: '700' },

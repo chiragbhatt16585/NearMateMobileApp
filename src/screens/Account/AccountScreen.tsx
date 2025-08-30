@@ -4,6 +4,7 @@ import Header from '../../components/Header';
 import { UserProfile, Address, Booking } from '../../types/user';
 import { getAuthEndpoint, getApiBaseUrl, buildApiUrl } from '../../config/api';
 
+
 interface AccountScreenProps {
   user: any;
   bookings: any[];
@@ -608,6 +609,8 @@ export default function AccountScreen({
           </View>
         </View>
 
+
+
         {/* Mobile Number Display */}
         <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
           <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Mobile Number</Text>
@@ -827,6 +830,7 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 16,
   },
+
   cardTitle: {
     fontSize: 18,
     fontWeight: '700',

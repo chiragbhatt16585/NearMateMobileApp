@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from
 import { useColorScheme } from 'react-native';
 import { ServiceCategory } from '../services/api';
 
+
 interface AllCategoriesScreenProps {
   onBack: () => void;
   onSelectCategory: (category: ServiceCategory) => void;
@@ -90,6 +91,8 @@ export default function AllCategoriesScreen({ onBack, onSelectCategory }: AllCat
         <View style={styles.rightSpacer} />
       </View>
 
+
+
       {error && (
         <View style={styles.errorContainer}>
           <Text style={[styles.errorText, { color: '#ff6b6b' }]}>{error}</Text>
@@ -130,6 +133,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
+
   backButton: {
     width: 40,
     height: 40,

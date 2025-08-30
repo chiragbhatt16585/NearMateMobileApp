@@ -31,12 +31,15 @@ import TermsConditionsScreen from './src/screens/TermsConditionsScreen';
 import { ServiceCategory, Partner } from './src/services/api';
 import { UserProfile } from './src/types/user';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { LocationProvider } from './src/contexts/LocationContext';
 
 export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <AppContent />
+        <LocationProvider>
+          <AppContent />
+        </LocationProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

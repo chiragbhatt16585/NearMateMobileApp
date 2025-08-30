@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, useColorScheme } from 'react-native';
 import { Partner } from '../services/api';
 
+
 interface ProviderProfileScreenProps {
   provider: Partner;
   onBack: () => void;
@@ -49,6 +50,8 @@ export default function ProviderProfileScreen({ provider, onBack, onBook, onChat
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}> 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+
+
         <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}> 
           <View style={styles.headerRow}> 
             <View style={[styles.avatar, { backgroundColor: '#ECF6FB' }]}> 
@@ -117,6 +120,7 @@ export default function ProviderProfileScreen({ provider, onBack, onBook, onChat
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { paddingHorizontal: 20, paddingVertical: 16, gap: 12 },
+
   card: { borderWidth: 1, borderRadius: 16, padding: 16, gap: 12 },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   avatar: { width: 64, height: 64, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
