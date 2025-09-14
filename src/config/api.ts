@@ -2,7 +2,7 @@
 export const API_CONFIG = {
   // Base URLs for different environments
   BASE_URLS: {
-    development: 'http://192.168.0.102:5174',  // Use your local IP for mobile testing
+    development: 'http://localhost:5174',  // Use localhost - works for simulator
     staging: 'https://staging-api.nearmate.com',
     production: 'https://api.nearmate.com',
   },
@@ -41,7 +41,12 @@ export const API_CONFIG = {
 
 // Helper function to get the current base URL
 export const getApiBaseUrl = (): string => {
-  // Use local IP for mobile device testing
+  // For development, try to auto-detect the local IP
+  if (__DEV__) {
+    // You can manually set this when your IP changes
+    const LOCAL_IP = '192.168.0.136'; // Update this when your IP changes
+    return `http://${LOCAL_IP}:5174`;
+  }
   return API_CONFIG.BASE_URLS.development;
 };
 

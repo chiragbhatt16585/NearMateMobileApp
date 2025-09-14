@@ -67,7 +67,9 @@ export default function Header({ title, onBack, rightLabel, onRightPress, connec
           accessible
           accessibilityLabel="Logo"
         />
-        <Text style={[styles.brandName, { color: colors.textPrimary }]} numberOfLines={1}>{label}</Text>
+        {title && (
+          <Text style={[styles.brandName, { color: colors.textPrimary }]} numberOfLines={1}>{label}</Text>
+        )}
       </View>
 
       <Pressable style={styles.locationSection} onPress={() => {

@@ -284,7 +284,7 @@ export default function AccountScreen({
     return (
       <View style={[styles.container, { backgroundColor: colors.surface }]}>
         <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-          <Header title="Account" onBack={onBack} />
+          <Header onBack={onBack} />
           <View style={styles.header}>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
               Sign in with your mobile number to access your profile
@@ -572,7 +572,7 @@ export default function AccountScreen({
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        <Header title="Account" onBack={onBack} />
+        <Header onBack={onBack} />
         
         {/* Show different content based on authentication status */}
         {!user || !user.id ? (
